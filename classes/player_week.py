@@ -5,7 +5,7 @@ from data_helpers import DataHelper
 class PlayerWeek:
     def __init__(self, ps, pid, pos, b):
         self.points_scored = ps
-        self.player_id = pid
+        self.player_id = int(pid)
         self.position = pos
         self.benched = b
 

@@ -55,5 +55,16 @@ for week in range(1, season_length + 1):
         team.add_weekly_roster(roster)
         team.add_opponent(opponent)
 
-for team in teams:
-    team.print()
+all_matches = []
+for week in range(1, season_length + 1):
+    week_matches = {}
+    for team in teams:
+        match = dp.get_match(teams, team.team_id, week)
+        if (match.winner_id not in week_matches.keys()):
+            week_matches.update({ match.winner_id: match })
+    all_matches.append(week_matches)
+    
+
+print (match)
+# for team in teams:
+#     team.print()

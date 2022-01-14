@@ -5,10 +5,14 @@ from ast import literal_eval
 from classes.player_week import PlayerWeek
 from classes.team import Team
 from classes.player_ref import PlayerRef
+from classes.match_info import MatchInfo
 
 class DataProcessors:
     def __init__(self) -> None:
         self.dh = DataHelper()
+
+    def get_roster_teamid(self, value):
+        return value.team_id
 
     def get_draft_rosters(self, roster_size, league_size):
         player_arr = self.dh.get_player_arr()
@@ -29,6 +33,7 @@ class DataProcessors:
                 i = i + 1
             team.add_drafted_roster(intial_roster)
             teams.append(team)
+        teams.sort(key=self.get_roster_teamid)
         return teams
 
     def get_weekly_roster(self, week, team_id):
@@ -40,7 +45,7 @@ class DataProcessors:
             player_data = player_data_dict.get(player_ref[0])
             weekly_points_string = player_data[1]
             weekly_points_arr = literal_eval(weekly_points_string)
-            weekly_points = weekly_points_arr[week]
+            weekly_points = weekly_points_arr[week - 1]
             player_id = player_ref[0]
             player_poistion = player_data[0]
             benched = player_ref[1]
@@ -51,3 +56,10 @@ class DataProcessors:
     def get_weekly_opponent(self, week, team_id):
         week = self.dh.get_week_data(week, team_id)
         return week[2]
+
+    def get_match(self, teams, team_id, week):
+       team_roster = teams[team_id - 1].weekly_rosters[week - 1]
+       opponent_id = teams[team_id - 1].opponents[week - 1]
+       opponent_roster = teams[opponent_id - 1].weekly_rosters[week - 1]
+       rosters = { team_id: team_roster, opponent_id: opponent_roster }
+       return MatchInfo(rosters) 

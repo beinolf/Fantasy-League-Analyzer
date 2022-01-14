@@ -12,7 +12,7 @@ class Team:
         self.drafted_roster = dros
 
     def add_opponent(self, oppo):
-        self.opponents.append(oppo)
+        self.opponents.append(int(oppo))
 
     def print(self):
         print('drafted roster team ' + str(self.team_id))
