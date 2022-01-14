@@ -42,6 +42,13 @@ class DataHelper:
     def get_player_roster(self, week, pid):
         with open('data/week_' + str(week) + ".csv", newline='') as draft:
             reader = csv.reader(draft)
-            roster = list(reader)
+            week = list(reader)
 
-        return literal_eval(roster[pid - 1][1])
+        return literal_eval(week[pid - 1][1])
+
+    def get_week_data(self, week, pid):
+        with open('data/week_' + str(week) + ".csv", newline='') as draft:
+            reader = csv.reader(draft)
+            week = list(reader)
+
+        return week[pid - 1]

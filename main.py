@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 
 from data_helpers import DataHelper
-from data_processor import DataProcessor
+from data_processors import DataProcessors
 from service_calls import ServiceCalls
 
 
@@ -12,7 +12,7 @@ season_length = 16
 number_of_teams = 8 
 sc = ServiceCalls(league_id)
 dh = DataHelper()
-dp = DataProcessor()
+dp = DataProcessors()
 
 if (not Path('./data/def_pid_map.csv').is_file()):
     sc.make_def_player_id_map()
@@ -46,8 +46,14 @@ for week in range(1, season_length + 1):
     else:
         print("Week " + str(week) + " data already created")
 
+teams = dp.get_draft_rosters(roster_size, number_of_teams)
 
-# teams = dp.assign_inital_rosters(roster_size)
+for week in range(1, season_length + 1):
+    for team in teams:
+        roster = dp.get_weekly_roster(week, team.team_id)
+        opponent = dp.get_weekly_opponent(week, team.team_id)
+        team.add_weekly_roster(roster)
+        team.add_opponent(opponent)
 
-# for team in teams:
-#     team.print()
+for team in teams:
+    team.print()

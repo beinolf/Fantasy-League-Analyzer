@@ -63,7 +63,7 @@ class ServiceCalls:
                 
                 roster.append([player_id, benched])
 
-            matchup_url = self.base_url + '/matchup?week=1&mid1=' + str(team_id)
+            matchup_url = self.base_url + '/matchup?week=' + str(week) + '&mid1=' + str(team_id)
             matchup_text = requests.get(matchup_url).text
             matchup_soup = BeautifulSoup(matchup_text, 'html.parser')
 
