@@ -94,7 +94,7 @@ class Superlatives:
 
         return best_ball_teams
 
-    def get_position_group_points(self, teams, position, num_rosterable):
+    def get_position_group_points(self, teams, position, num_rosterable, num_of_teams, season_length):
         position_results = {}
         for team in teams:
             points_scored = 0
@@ -110,7 +110,15 @@ class Superlatives:
                 for starter in range(0, num_rosterable):
                     points_scored = round(position_group[starter].points_scored + points_scored, 2)
             
-            position_results.update({ team.team_id: points_scored })
+            position_results.update({ team.team_id: [points_scored, round(points_scored/season_length, 2)] })
+
+        total_result = 0
+        for t, r in position_results.items():
+            total_result = round(total_result + r[0], 2)
+
+        avg = round(total_result/num_of_teams, 2)
+
+        position_results.update({num_of_teams + 1: [avg, round(avg/season_length, 2)]})
 
         return position_results
 
@@ -137,8 +145,81 @@ class Superlatives:
                 drafted_ids.append(int(drafted_player.player_id))
             for roster in team.weekly_rosters:
                 for player in roster:
-                    if player.player_id not in drafted_ids:
-                        player.set_benched(False)
+                    if player.player_id in drafted_ids and not player.benched:
+                        player.set_benched(True)
                         
         return wire_teams
                 
+    def get_value_teams(self, teams, player_values, draft):
+        drafted_teams = deepcopy(teams)
+        player_value_maps = {}
+
+        for team in drafted_teams:
+            player_value_map = {}
+
+            for drafted_player in team.drafted_roster:
+                player_value_map.update({ int(drafted_player.player_id): 0})
+
+            for roster in team.weekly_rosters:
+                for player in roster:
+                    if player.player_id in player_value_map and not player.benched:
+                        curr_value = player_value_map.get(player.player_id)
+                        player_value_map.update({ player.player_id: round(curr_value + player.points_scored, 2)})
+
+            player_value_maps.update({ team.team_id: player_value_map })
+
+        for tid, pvm in player_value_maps.items():
+            for p in pvm:
+                draft_pos = draft.index([str(p)])
+                draft_value = float(player_values[draft_pos][0])
+                season_value = pvm.get(p)
+                pvm.update({p: round(season_value/draft_value, 2)})
+                        
+        return player_value_maps
+
+    def get_bdgo(self, a_results, bb_results, num_of_weeks, num_of_teams):
+        game_day_org = {}
+        for tid, result in a_results.items():
+            suboptimal = round(bb_results.get(tid).total_scores - result.total_scores, 2)
+            game_day_org.update({tid: [suboptimal, round(suboptimal/num_of_weeks, 2)]})
+
+        total_result = 0
+        for t, r in game_day_org.items():
+            total_result = round(total_result + r[0], 2)
+
+        avg = total_result/num_of_teams
+
+        game_day_org.update({num_of_teams + 1: [avg, round(avg/num_of_weeks, 2)]})
+        return game_day_org
+
+    def get_luck(self, a_results, bb_results, num_of_weeks, num_of_teams):
+        luck_result = {}
+        for tid, result in a_results.items():
+            suboptimal = round(bb_results.get(tid).point_against - result.point_against, 2)
+            luck_result.update({tid: [suboptimal, round(suboptimal/num_of_weeks, 2)]})
+
+        total_result = 0
+        for t, r in luck_result.items():
+            total_result = round(total_result + r[0], 2)
+
+        avg = round(total_result/num_of_teams, 2)
+
+        luck_result.update({num_of_teams + 1: [avg, round(avg/num_of_weeks, 2)]})
+        return luck_result
+
+    def get_draft_sup(self, draft_val, num_of_weeks, num_of_teams):
+        val_result = {}
+        for tid, valmap in draft_val.items():
+            total_val = 0
+            for pid, val in valmap.items():
+                total_val = round(total_val + val, 2)
+            val_result.update({ tid: [total_val, round(total_val/num_of_weeks, 2)] })
+
+        total_result = 0
+        for t, r in val_result.items():
+            total_result = round(total_result + r[0], 2)
+
+        avg = round(total_result/num_of_teams, 2)
+
+        val_result.update({num_of_teams + 1: [avg, round(avg/num_of_weeks, 2)]})
+        return val_result

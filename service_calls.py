@@ -16,6 +16,24 @@ class ServiceCalls:
         self.league_id = lid
         self.base_url = 'https://football.fantasysports.yahoo.com/f1/' + str(lid)
 
+    def set_draft_value(self):
+        value_url = 'https://www.theringer.com/nfl/2018/8/20/17758898/fantasy-football-draft-pick-value-chart'
+        value_html = requests.get(value_url).text
+        value_soup = BeautifulSoup(value_html, 'html.parser')
+        values = []
+
+        table = value_soup.find('table', { 'class': "p-data-table" })
+        for tr in table.find_all('tr'):
+            values.append(tr.contents[3].next)
+
+        values.pop(0)
+        values.pop(0)
+
+        with open('data/draft_value.csv', 'w', newline='') as draft:   
+            wtr = csv.writer(draft,lineterminator='\n')
+            for value in values:
+                wtr.writerow([value])
+
     # Will create drafts.csv, a csv file containing a csv of player_ids in drafted order
     def set_draft_data(self):
         ff_url = self.base_url + '/draftresults'

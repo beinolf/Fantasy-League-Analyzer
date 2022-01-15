@@ -17,6 +17,9 @@ dh = DataHelper()
 dp = DataProcessors()
 sup = Superlatives()
 
+if (not Path('./data/draft_value.csv').is_file()):
+    sc.set_draft_value()
+
 if (not Path('./data/def_pid_map.csv').is_file()):
     sc.make_def_player_id_map()
 else:
@@ -69,7 +72,7 @@ position_map = {'K':1, 'QB':1, 'RB':2, 'WR':3, 'TE':1, 'DEF':1}
 
 position_results = {}
 for position, min in position_map.items():
-    position_results.update({ str(position): sup.get_position_group_points(teams, position, min) })
+    position_results.update({ str(position): sup.get_position_group_points(teams, position, min, number_of_teams, season_length) })
 
 drafted_teams = sup.get_best_ball_teams(teams)
 drafted_matches = dp.get_season_matches(drafted_teams, season_length)
@@ -78,6 +81,15 @@ drafted_results = dp.process_matches(drafted_matches, number_of_teams)
 wire_teams = sup.get_best_ball_teams(teams)
 wire_matches = dp.get_season_matches(wire_teams, season_length)
 wire_results = dp.process_matches(wire_matches, number_of_teams)
+
+dv = dh.get_draft_value()
+draft_data = dh.get_draft()
+
+value = sup.get_value_teams(teams, dv, draft_data)
+
+bdgo = sup.get_bdgo(results, best_ball_results, season_length, number_of_teams)
+luck = sup.get_luck(results, best_ball_results, season_length, number_of_teams)
+draft_val = sup.get_draft_sup(value, season_length, number_of_teams)
 print('')
 # for team in teams:
 #     team.print()

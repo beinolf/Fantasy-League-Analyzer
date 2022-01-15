@@ -23,11 +23,18 @@ class DataHelper:
         return players
     
     def get_draft(self):
-        with open('data/draft.csv', newline='') as draft:
+        with open('data/draft.csv', newline='\n') as draft:
             reader = csv.reader(draft)
             draft_data = list(reader)
             
         return draft_data
+
+    def get_draft_value(self):
+        with open('data/draft_value.csv', newline='') as draft_v:
+            reader = csv.reader(draft_v)
+            draft_value = list(reader)
+            
+        return draft_value
 
     def get_draft_tid_map(self):
         with open('data/draft_tid_map.csv', newline='\n') as map_file:
