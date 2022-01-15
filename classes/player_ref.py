@@ -3,7 +3,7 @@ class PlayerRef:
         if pts != None:
             self.points = pts
         else:
-            self.points = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            self.points = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         if pos != None:
             self.position = pos

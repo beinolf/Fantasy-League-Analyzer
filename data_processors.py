@@ -1,4 +1,6 @@
+from re import M
 from turtle import position
+from classes.season_result import SeasonResult
 from data_helpers import DataHelper
 from ast import literal_eval
 
@@ -63,3 +65,32 @@ class DataProcessors:
        opponent_roster = teams[opponent_id - 1].weekly_rosters[week - 1]
        rosters = { team_id: team_roster, opponent_id: opponent_roster }
        return MatchInfo(rosters) 
+
+    def get_season_matches(self, teams, season_length):
+        all_matches = []
+        for week in range(1, season_length + 1):
+            week_matches = {}
+            for team in teams:
+                match = self.get_match(teams, team.team_id, week)
+                if (str(match.winner_id) + str(match.loser_id) not in week_matches.keys()):
+                    week_matches.update({ str(match.winner_id) + str(match.loser_id): match })
+            all_matches.append(week_matches)
+        return all_matches
+
+    def process_matches(self, matches, number_of_teams):
+        season_results = {}
+        for pid in range(1, number_of_teams + 1):
+            season_results.update({ pid: SeasonResult(0, 0, 0) })
+        
+        for week in matches:
+            for match in week.values():
+                loser = season_results.get(match.loser_id)
+                loser.add_loss()
+                loser.add_to_total(match.scores.get(match.loser_id))
+                winner = season_results.get(match.winner_id)
+                winner.add_win()
+                winner.add_to_total(match.scores.get(match.winner_id))
+                print('here')
+
+        return season_results
+                

@@ -39,7 +39,7 @@ class ServiceCalls:
                 wtr.writerow([player])
 
     def set_weekly_data(self, week):
-        time.sleep(.75)
+        time.sleep(.1)
         ff_url = self.base_url + '/starters?week=' + str(week)
         html_text = requests.get(ff_url).text
         soup = BeautifulSoup(html_text, 'html.parser')
@@ -107,7 +107,7 @@ class ServiceCalls:
 
         if player_dict.get(player_id) == None:
             with open('data/player_data.csv', 'a') as player_data_file:
-                time.sleep(.75)
+                time.sleep(.1)
                 ff_url = self.base_url + '/playernote?init=1&view=notes&pid=' + str(player_id)
                 html_text = requests.get(ff_url, timeout=100).text
                 soup = BeautifulSoup(html_text, 'html.parser')
@@ -115,8 +115,11 @@ class ServiceCalls:
                 week = 1
 
                 for td in soup.find_all('td'):
-                    if td.has_attr('class') and td['class'][0] == '\\"fanpts\\"':
+                    if td['class'][0] == '\\"fanpts\\"':
                         scrapped_player.add_week(week, td.next.rstrip("<\/td>"))
+                        week = week + 1
+                    elif td['class'][0] == '\\"opp\\"' and td.next.replace('<\/td>', "") == 'BYE':
+                        scrapped_player.add_week(week, 0)
                         week = week + 1
 
                 for dd in soup.find_all('dd'):

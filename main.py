@@ -8,7 +8,7 @@ from service_calls import ServiceCalls
 
 league_id = 412227
 roster_size = 16
-season_length = 16
+season_length = 15
 number_of_teams = 8 
 sc = ServiceCalls(league_id)
 dh = DataHelper()
@@ -29,22 +29,22 @@ if (not Path('./data/draft_tid_map.csv').is_file()):
 else:
     print("Draft player id map already created")
 
-if (not Path('./data/player_data.csv').is_file()):
-    draft_data = dh.get_draft()
-    for player_id in draft_data:
-        sc.set_player_data(player_id[0])
-else:
-    print("Player data already created")
+# if (not Path('./data/player_data.csv').is_file()):
+draft_data = dh.get_draft()
+for player_id in draft_data:
+    sc.set_player_data(player_id[0])
+# else:
+    # print("Player data already created")
 
 for week in range(1, season_length + 1):
-    if (not Path('./data/week_' + str(week) + '.csv').is_file()):
-        sc.set_weekly_data(week)
-        for team in range (1, number_of_teams + 1):
-            roster = dh.get_player_roster(week, team)
-            for player in roster:
-                sc.set_player_data(player[0])
-    else:
-        print("Week " + str(week) + " data already created")
+    #if (not Path('./data/week_' + str(week) + '.csv').is_file()):
+    #sc.set_weekly_data(week)
+    for team in range (1, number_of_teams + 1):
+        roster = dh.get_player_roster(week, team)
+        for player in roster:
+            sc.set_player_data(player[0])
+    #else:
+     #   print("Week " + str(week) + " data already created")
 
 teams = dp.get_draft_rosters(roster_size, number_of_teams)
 
@@ -55,14 +55,9 @@ for week in range(1, season_length + 1):
         team.add_weekly_roster(roster)
         team.add_opponent(opponent)
 
-all_matches = []
-for week in range(1, season_length + 1):
-    week_matches = {}
-    for team in teams:
-        match = dp.get_match(teams, team.team_id, week)
-        if (match.winner_id not in week_matches.keys()):
-            week_matches.update({ match.winner_id: match })
-    all_matches.append(week_matches)
+all_matches = dp.get_season_matches(teams, season_length)
+
+results = dp.process_matches(all_matches, number_of_teams)
     
 
 print (match)

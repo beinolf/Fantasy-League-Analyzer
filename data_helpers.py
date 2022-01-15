@@ -1,13 +1,17 @@
 import csv
 from ast import literal_eval
+from pathlib import Path
 from classes.player_ref import PlayerRef
 from classes.team import Team
 
 class DataHelper:
     def get_player_arr(self):
-        with open('data/player_data.csv', newline='') as pd:
-            reader = csv.reader(pd)
-            return list(reader)
+        if (Path('./data/player_data.csv').is_file()):
+            with open('data/player_data.csv', newline='') as pd:
+                reader = csv.reader(pd)
+                return list(reader)
+        else:
+            return []
 
     def get_player_dict(self):
         players = {}
