@@ -60,11 +60,31 @@ class DataProcessors:
         return week[2]
 
     def get_match(self, teams, team_id, week):
-       team_roster = teams[team_id - 1].weekly_rosters[week - 1]
-       opponent_id = teams[team_id - 1].opponents[week - 1]
-       opponent_roster = teams[opponent_id - 1].weekly_rosters[week - 1]
-       rosters = { team_id: team_roster, opponent_id: opponent_roster }
-       return MatchInfo(rosters) 
+        team_roster = teams[team_id - 1].weekly_rosters[week - 1]
+        opponent_id = teams[team_id - 1].opponents[week - 1]
+        opponent_roster = teams[opponent_id - 1].weekly_rosters[week - 1]
+        rosters = { team_id: team_roster, opponent_id: opponent_roster }
+        scores = {}
+        intial_pid = 0
+        for pid, players in rosters.items():
+            score = 0
+
+            for player in players:
+                if not player.benched:
+                    score = score + float(player.points_scored)
+            scores.update({ pid: round(score,2) })
+
+            if len(scores) == 2:
+                if scores.get(pid) > scores.get(intial_pid):
+                    winner_id = pid
+                    loser_id = intial_pid
+                else:
+                    winner_id = intial_pid
+                    loser_id = pid
+            else:
+                intial_pid = pid
+
+        return MatchInfo(rosters, winner_id, loser_id, scores) 
 
     def get_season_matches(self, teams, season_length):
         all_matches = []
@@ -80,17 +100,18 @@ class DataProcessors:
     def process_matches(self, matches, number_of_teams):
         season_results = {}
         for pid in range(1, number_of_teams + 1):
-            season_results.update({ pid: SeasonResult(0, 0, 0) })
+            season_results.update({ pid: SeasonResult(0, 0, 0, 0) })
         
         for week in matches:
             for match in week.values():
                 loser = season_results.get(match.loser_id)
                 loser.add_loss()
                 loser.add_to_total(match.scores.get(match.loser_id))
+                loser.add_to_against(match.scores.get(match.winner_id))
                 winner = season_results.get(match.winner_id)
                 winner.add_win()
                 winner.add_to_total(match.scores.get(match.winner_id))
-                print('here')
+                winner.add_to_against(match.scores.get(match.loser_id))
 
         return season_results
                 

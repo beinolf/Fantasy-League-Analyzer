@@ -4,9 +4,12 @@ from data_helpers import DataHelper
 
 class PlayerWeek:
     def __init__(self, ps, pid, pos, b):
-        self.points_scored = ps
+        self.points_scored = float(ps)
         self.player_id = int(pid)
         self.position = pos
+        self.benched = b
+
+    def set_benched(self, b):
         self.benched = b
 
     def print(self):

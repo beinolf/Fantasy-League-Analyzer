@@ -51,7 +51,7 @@ class ServiceCalls:
             tbody = table.find('tbody')
 
             for tr in tbody.find_all('tr'):
-                benched = tr.contents[1].contents[0] == 'BN'
+                benched = tr.contents[1].contents[0] == 'BN' or tr.contents[1].contents[0] == 'IR'
                 link = tr.find('a')
 
                 if link.get('href').startswith('https://sports.yahoo.com/nfl/players'):
