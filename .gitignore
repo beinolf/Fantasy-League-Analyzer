@@ -1,4 +1,5 @@
-
+.vscode/
+.vscode/*
 old_py_scraper/.vscode/
 old_py_scraper/.vscode/*
 old_py_scraper/__pycache__/
