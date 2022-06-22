@@ -178,7 +178,3 @@ class ServiceCalls:
             for key, value in dmap.items():
                 wtr.writerow([key, value])
         
-
-    
-
-  

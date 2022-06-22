@@ -91,5 +91,3 @@ bdgo = sup.get_bdgo(results, best_ball_results, season_length, number_of_teams)
 luck = sup.get_luck(results, best_ball_results, season_length, number_of_teams)
 draft_val = sup.get_draft_sup(value, season_length, number_of_teams)
 print('')
-# for team in teams:
-#     team.print()
