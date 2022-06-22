@@ -4,3 +4,4 @@ old_py_scraper/.vscode/
 old_py_scraper/.vscode/*
 old_py_scraper/__pycache__/
 old_py_scraper/__pycache__/*
+.Rproj.user
