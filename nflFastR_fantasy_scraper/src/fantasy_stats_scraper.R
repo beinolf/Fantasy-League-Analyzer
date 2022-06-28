@@ -216,7 +216,7 @@ ofr_df <- as.list(offensive_fumble_rec_td_hash) %>%
   mutate("week" = as.numeric(week))
 
 # Join gathered and built data
-fantasy_stats <- players %>%
+offense_fantasy_stats <- players %>%
   full_join(ofr_df,
             by = c("player_id" = "player_id", "week" = "week")) %>%
   left_join(fourty_yard_stats_df,
