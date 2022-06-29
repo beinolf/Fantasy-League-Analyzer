@@ -10,13 +10,145 @@ library(data.table)
 #' @param i_hash - Hash to increment, format expected is a csv string set of values
 #' @param key - key to locate value
 #' @param inc_V_loc - increment value location, location in the string to increment ex. 2 would increment "1,1" to "1,2"
-increment_hash <- function(i_hash, key, inc_V_loc) {
-  inc_V_loc <- inc_V_loc * 2 - 1
-  curr_value <- values(i_hash, keys = key)
+increment_hash <- function(i_hash, key, inc_V_loc, increment_amount = 1) {
+  curr_value <- values(i_hash, keys = key) %>%
+    str_split(",")
+  
   del(key, i_hash)
-  substring(curr_value, inc_V_loc, inc_V_loc) <-
-    as.character(as.numeric(substring(curr_value, inc_V_loc, inc_V_loc)) + 1)
-  .set(i_hash, keys = key, values = curr_value)
+  inc_value <- as.numeric(curr_value[[1]][inc_V_loc]) + as.numeric(increment_amount)
+  curr_value[[1]][inc_V_loc] <- as.character(inc_value)
+  .set(i_hash, keys = key, values = paste(curr_value[[1]], collapse=","))
+}
+
+get_pid <- function(number, name, p_team, id_map, player_stats, week) {
+  pid <- id_map %>%
+    filter(jersey_number == number & last_name == name) %>%
+    select(gsis_id)
+  
+  if (nrow(pid) != 1) {
+    pid <- id_map %>%
+      filter(last_name == name & team == p_team) %>%
+      select(gsis_id)
+  }
+  
+  
+  if (nrow(pid) != 1) {
+    pid <- id_map %>%
+      filter(jersey_number == number & last_name == name & team == p_team) %>%
+      select(gsis_id)
+  }
+  
+  if (nrow(pid) != 1) {
+    if (missing(week)) {
+      week = 1
+    }
+    pid <- player_stats %>%
+      filter(recent_team == p_team & week == week & grepl(paste(".", name, sep = ""), player_name)) %>%
+      select(player_id)
+  }
+  
+  pid
+}
+
+build_return_yards <- function(r_pbp, r_hash, player_stats, id_map) {
+  if (r_pbp[["lateral_return"]] == 1) {
+    set_lateral_return_yards(r_pbp, r_hash, player_stats, id_map)
+  } else {
+    set_return_yards(r_pbp, r_hash)
+  }
+}
+
+set_return_yards<- function(r_pbp, r_hash) {
+  r_yards <- str_replace_all(r_pbp[["return_yards"]], fixed(" "), "")
+  
+  if (r_pbp[["play_type"]] == "punt") {
+    pid <- r_pbp[["punt_returner_player_id"]]
+  } else {
+    pid <-r_pbp[["kickoff_returner_player_id"]]
+  }
+  
+  if (r_pbp[["return_touchdown"]] == 1 & pid == r_pbp[["td_player_id"]]) {
+    return_td <- 1
+  } else {
+    return_td <- 0
+  }
+  
+  return_key <-
+    paste(pid, r_pbp[["week"]], sep = ",")
+  
+  if (!has.key(return_key, r_hash)) {
+    .set(r_hash, keys = return_key, values = paste(r_yards, return_td, sep = ","))
+  } else {
+    increment_hash(r_hash, return_key, 1, r_yards)
+    increment_hash(r_hash, return_key, 2, return_td)
+  }
+  
+}
+
+set_lateral_return_yards <- function(lr_pbp, r_hash, player_stat, id_ma) {
+  
+  p_info <- str_match_all(lr_pbp[["desc"]], "(\\d{1,2})(?:-[A-Za-z]\\.)([a-zA-z]{1,25})(?: )(?!kicks)(?!punts)")
+  
+  r_yards <- str_match_all(lr_pbp[["desc"]],"(?:for )(?:(?=(no gain))|(?=(\\d{1,2})|(?=(-\\d{1,2}))))")
+  
+  if (lr_pbp[["play_type"]] == "punt") {
+    team <- lr_pbp[["defteam"]]
+  } else {
+    team <- lr_pbp[["posteam"]]
+  }
+  
+  pid_1 <- get_pid(p_info[[1]][1,2], p_info[[1]][1,3], team, id_map, player_stats, lr_pbp[["week"]])
+  pid_2 <- get_pid(p_info[[1]][2,2], p_info[[1]][2,3], team, id_map, player_stats, lr_pbp[["week"]])
+  
+  return_key_1 <- paste(pid_1[[1]], lr_pbp[["week"]], sep = ",")
+  return_key_2 <- paste(pid_2[[1]], lr_pbp[["week"]], sep = ",")
+  
+  if (!is.na(r_yards[[1]][1,3])) {
+    p1_yards <- r_yards[[1]][1,3]
+  } else if (!is.na(r_yards[[1]][1,4])) {
+    p1_yards <- r_yards[[1]][1,4]
+  } else {
+    p1_yards <- NA
+  }
+  
+  if (!is.na(r_yards[[1]][2,3])) {
+    p2_yards <- r_yards[[1]][2,3]
+  } else if (!is.na(r_yards[[1]][2,4])) {
+    p2_yards <- r_yards[[1]][2,4]
+  } else {
+    p2_yards <- NA
+  }
+  
+  if (lr_pbp[["return_touchdown"]] == 1 & pid_1 == lr_pbp[["td_player_id"]]) {
+    return_td_1 <- 1
+  } else {
+    return_td_1 <- 0
+  }
+  
+  if (lr_pbp[["return_touchdown"]] == 1 & pid_2 == lr_pbp[["td_player_id"]]) {
+    return_td_2 <- 1
+  } else {
+    return_td_2 <- 0
+  }
+  
+  if (!is.na(p1_yards)) {
+    if (!has.key(return_key_1, r_hash)) {
+      .set(r_hash, keys = return_key_1, values = paste(p1_yards, return_td_1, sep = ","))
+    } else {
+      increment_hash(r_hash, return_key_1, 1, p1_yards)
+      increment_hash(r_hash, return_key_1, 2, return_td_1)
+    }
+  }
+  
+  if (!is.na(p2_yards)) {
+    if (!has.key(return_key_2, r_hash)) {
+      .set(r_hash, keys = return_key_2, values = paste(p2_yards, return_td_2, sep = ","))
+    } else {
+      increment_hash(r_hash, return_key_2, 1, p2_yards)
+      increment_hash(r_hash, return_key_2, 2, return_td_2)
+    }
+  }
+  
 }
 
 #' Builds a row(s) of 40 yard weekly player data based on provided play-by-play row
@@ -167,7 +299,7 @@ fourty_yard_stats_df <- as.list(fourty_yard_stats_hash) %>%
   mutate("week" = as.numeric(week))
 
 # Build pick six dataframe
-pick_six_pbp <- load_pbp(2021) %>%
+pick_six_pbp <- pbp %>%
   filter(interception == 1 & td_team == defteam)
 
 pick_six_hash <- hash()
@@ -215,6 +347,33 @@ ofr_df <- as.list(offensive_fumble_rec_td_hash) %>%
   )  %>%
   mutate("week" = as.numeric(week))
 
+return_pbp <- pbp %>%
+  filter(play_type == "kickoff" | play_type == "punt")
+
+return_yards_hash <- hash()
+
+apply(return_pbp, 1, build_return_yards, return_yards_hash, player_stats, id_map)
+
+return_df <- as.list(return_yards_hash) %>%
+  as.data.frame(check.names = FALSE) %>%
+  gather(key = "c_key", value = "c_return") %>%
+  separate(
+    col = "c_key",
+    into = c("player_id", "week"),
+    sep = ",",
+    remove = TRUE
+  )  %>%
+  separate(
+    col = "c_return",
+    into = c(
+      "return_yards",
+      "return_tds"
+    ),
+    sep = ",",
+    remove = TRUE
+  ) %>%
+  mutate("week" = as.numeric(week))
+
 # Join gathered and built data
 offense_fantasy_stats <- players %>%
   full_join(ofr_df,
@@ -222,6 +381,8 @@ offense_fantasy_stats <- players %>%
   left_join(fourty_yard_stats_df,
             by = c("player_id" = "player_id", "week" = "week")) %>%
   left_join(pick_six_df,
+            by = c("player_id" = "player_id", "week" = "week")) %>%
+  left_join(return_df,
             by = c("player_id" = "player_id", "week" = "week")) %>%
   inner_join(id_map, by = c("player_id" = "gsis_id")) %>%
   mutate(
@@ -268,9 +429,11 @@ offense_fantasy_stats <- players %>%
     fourty_yard_receiving_tds,
     fourty_yard_rushing_tds,
     pick_sixes,
-    ofr_tds
+    ofr_tds,
+    return_yards,
+    return_tds
   ) %>%
   filter(week <= 18) %>%
   mutate_all( ~ replace(., is.na(.), 0))
 
-View(fantasy_stats)
+View(offense_fantasy_stats)
